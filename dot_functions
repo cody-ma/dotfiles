@@ -12,17 +12,6 @@ function gd() {
   fi
 }
 
-# delete local branches whose PRs have been merged or closed on GitHub
-function git-clean() {
-  git fetch origin master
-  git branch | grep -Ev "(^\*|master|main)" | while read branch; do
-    if gh pr list --head "$branch" --state merged --json number --jq '.[0].number' 2>/dev/null | grep -q . ||
-       gh pr list --head "$branch" --state closed --json number --jq '.[0].number' 2>/dev/null | grep -q .; then
-      git branch -D "$branch"
-    fi
-  done
-}
-
 # publish a branch, create a PR, then open the PR in a browser
 function ghpr() {
     git push -u origin $(git rev-parse --abbrev-ref HEAD)

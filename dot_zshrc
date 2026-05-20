@@ -43,42 +43,6 @@ fancy-ctrl-z() {
 zle -N fancy-ctrl-z
 bindkey '^Z' fancy-ctrl-z
 
-# Git aliases (the subset of OMZ's git plugin actually used)
-alias g='git'
-alias ga='git add'
-alias gaa='git add --all'
-alias gb='git branch'
-alias gbd='git branch --delete'
-alias gbD='git branch --delete --force'
-alias gc='git commit --verbose'
-alias gcb='git checkout -b'
-alias gcn!='git commit --verbose --no-edit --amend'
-alias gco='git checkout'
-alias gf='git fetch'
-alias gfo='git fetch origin'
-alias gl='git pull'
-alias glg='git log --stat'
-alias glo='git log --oneline --decorate'
-alias glog='git log --oneline --decorate --graph'
-alias gp='git push'
-alias grst='git restore --staged'
-alias gst='git status'
-
-# git_main_branch: returns the name of the repo's main branch
-function git_main_branch() {
-  command git rev-parse --git-dir &>/dev/null || return
-  local ref
-  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk,mainline,default,stable,master}; do
-    if command git show-ref -q --verify $ref; then
-      echo ${ref:t}
-      return
-    fi
-  done
-  echo master
-}
-alias gcm='git checkout $(git_main_branch)'
-alias gmom='git merge origin/$(git_main_branch)'
-
 # zsh-autosuggestions (brew)
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20

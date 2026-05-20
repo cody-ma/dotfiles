@@ -1,19 +1,23 @@
 [alias]
-  b = branch
+  # Branch ops
   bc = "!git branch --merged | grep -v -e '^\\*' -e 'master' -e 'main' | xargs git branch -d"
-  bd = branch -D
+  main = "!git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo master"
+  clean-branches = "!f() { git fetch origin master && git branch | grep -Ev '(^\\*|master|main)' | while read branch; do if gh pr list --head \"$branch\" --state merged --json number --jq '.[0].number' 2>/dev/null | grep -q . || gh pr list --head \"$branch\" --state closed --json number --jq '.[0].number' 2>/dev/null | grep -q .; then git branch -D \"$branch\"; fi; done; }; f"
+
+  # Commit ops
   ca = commit --amend
-  cob = checkout -b
   cm = commit -m
-	co = checkout
+
+  # Inspection
   d = diff
   edit = !nvim -p $(git status --porcelain | awk '{print $2}' )
   l = !git --no-pager log --pretty=format:\"%C(yellow)%h%Creset -%C(magenta)%d%Creset %s %C(green)(%cr) [%an]\" --abbrev-commit -25
+  approvals = "!git log --since='3 months ago' | grep Approved | sort | uniq -c | sort"
+  top = shortlog -s -n --first-parent --after=\"2026-01-01\" HEAD
+
+  # Push & publish
   pf = push -f
   pub = !git push -u origin $(git symbolic-ref --short HEAD)
-  pul = pull
-  rs = restore --staged
-	top = shortlog -s -n --first-parent --after=\"2026-01-01\" HEAD
 [pull]
 	rebase = false
 [user]

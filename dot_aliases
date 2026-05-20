@@ -17,6 +17,29 @@ alias vi='nvim'
 alias vim='nvim'
 alias vimrc='cd ~/.config/nvim/lua; vim .'
 
+# Git shell aliases (subset of OMZ's git plugin actually used)
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gb='git branch'
+alias gbd='git branch --delete'
+alias gbD='git branch --delete --force'
+alias gc='git commit --verbose'
+alias gcb='git checkout -b'
+alias gcn!='git commit --verbose --no-edit --amend'
+alias gco='git checkout'
+alias gf='git fetch'
+alias gfo='git fetch origin'
+alias gl='git pull'
+alias glg='git log --stat'
+alias glo='git log --oneline --decorate'
+alias glog='git log --oneline --decorate --graph'
+alias gp='git push'
+alias grst='git restore --staged'
+alias gst='git status'
+alias gcm='git checkout $(git main)'
+alias gmom='git merge origin/$(git main)'
+
 # docker compose commands that take an arg
 alias dc='docker compose'
 alias dcd='printf "%s\n" y | docker compose rm -s -v'
@@ -46,6 +69,3 @@ alias web5='cd /Users/cody/persona/persona-web-5/'
 
 # lock screen
 alias afk='pmset displaysleepnow'
-
-# See approvals by committer
-alias approvals='git log --since="3 months ago" | grep Approved | sort | uniq -c | sort'
