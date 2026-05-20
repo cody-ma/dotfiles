@@ -1,0 +1,30 @@
+# Theme
+theme = dark:Gruvbox Dark,light:Gruvbox Light
+
+# Font
+font-family = "CodeNewRoman Nerd Font"
+font-size = 18
+
+# Shell Integration
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+
+# Scrollback
+scrollback-limit = 100000000
+
+# Pane navigation (vim-style)
+keybind = cmd+h=goto_split:left
+keybind = cmd+j=goto_split:down
+keybind = cmd+k=goto_split:up
+keybind = cmd+l=goto_split:right
+keybind = cmd+shift+f=toggle_split_zoom
+
+# Behavior
+auto-update-channel = tip
+unfocused-split-opacity = 0.4
+
+# Notifications
+bell-features = attention,title,no-system,no-audio,no-border
+
+# Window
+macos-titlebar-style = tabs

@@ -1,0 +1,117 @@
+# Shell functions. Sourced from ~/.zshrc alongside ~/.aliases.
+# Aliases (simple substitutions) live in ~/.aliases.
+# Functions (anything with logic) live here.
+
+# git diff with conditional side-by-side based on terminal width
+unalias gd 2>/dev/null
+function gd() {
+  if [[ $(tput cols) -gt 120 ]]; then
+    git -c delta.side-by-side=true diff "$@"
+  else
+    git diff "$@"
+  fi
+}
+
+# delete local branches whose PRs have been merged or closed on GitHub
+function git-clean() {
+  git fetch origin master
+  git branch | grep -Ev "(^\*|master|main)" | while read branch; do
+    if gh pr list --head "$branch" --state merged --json number --jq '.[0].number' 2>/dev/null | grep -q . ||
+       gh pr list --head "$branch" --state closed --json number --jq '.[0].number' 2>/dev/null | grep -q .; then
+      git branch -D "$branch"
+    fi
+  done
+}
+
+# publish a branch, create a PR, then open the PR in a browser
+function ghpr() {
+    git push -u origin $(git rev-parse --abbrev-ref HEAD)
+
+    pr_command="gh pr create -a @me --fill"
+
+    eval $pr_command
+    gh pr view --web
+}
+
+# helper: run a command with a spinner
+function _webr_spin() {
+  local emoji="$1" msg="$2"
+  shift 2
+  local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local i=0
+
+  setopt local_options no_monitor
+  local start=$SECONDS
+  local logfile
+  logfile=$(mktemp -t webr.XXXXXX)
+  # Force plain progress so the captured log isn't a TUI-escape soup
+  COMPOSE_PROGRESS=plain NO_COLOR=1 eval "$*" &> "$logfile" &
+  local pid=$!
+
+  while kill -0 "$pid" 2>/dev/null; do
+    printf "\r  %s %s %s" "${frames[$((i % 10 + 1))]}" "$emoji" "$msg"
+    i=$((i + 1))
+    sleep 0.08
+  done
+  wait "$pid"
+  local rc=$?
+  local elapsed=$((SECONDS - start))
+
+  if [[ $rc -eq 0 ]]; then
+    printf "\r  ✅ %s %s (%ds)\n" "$emoji" "$msg" "$elapsed"
+    rm -f "$logfile"
+  else
+    printf "\r  ❌ %s %s (%ds)\n" "$emoji" "$msg" "$elapsed"
+    # Bypass `cat=bat` alias so we don't trigger the pager on garbled output
+    command cat "$logfile"
+    printf "  📝 Full log: %s\n" "$logfile"
+  fi
+  return $rc
+}
+
+# restart web environment after switching branches
+function webr() {
+  setopt local_options no_monitor
+  local is_primary=false
+  [[ "$(basename "$PWD")" == "persona-web" ]] && is_primary=true
+
+  if $is_primary; then
+    _webr_spin "🛑" "Stopping containers..." "docker compose --profile primary down"
+  else
+    _webr_spin "🛑" "Stopping containers..." "printf '%s\n' y | docker compose rm -s -v"
+  fi
+
+  _webr_spin "🔧" "Fixing docker compose config..." "p checkout fix"
+  _webr_spin "📦" "Installing dependencies..." "docker compose run --user root --rm web bash -c 'bundle install && yarn install'"
+  _webr_spin "🗃️"  "Running migrations..." "docker compose run --user root --rm web bash -c 'bundle exec rails db:migrate && bundle exec rails db:migrate RAILS_ENV=test'"
+
+  if $is_primary; then
+    _webr_spin "🚀" "Starting containers..." "docker compose --profile primary up -d"
+  else
+    _webr_spin "🚀" "Starting containers..." "docker compose up -d"
+  fi
+
+  # wait for web with spinner
+  local start=$SECONDS
+  docker compose logs -f web 2>&1 | grep -m 1 "Use Ctrl-C to stop" > /dev/null &
+  local pid=$!
+  local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+  local i=0
+  while kill -0 "$pid" 2>/dev/null; do
+    printf "\r  %s ⏳ Waiting for web to be ready..." "${frames[$((i % 10 + 1))]}"
+    i=$((i + 1))
+    sleep 0.08
+  done
+  wait "$pid"
+  local elapsed=$((SECONDS - start))
+  printf "\r  ✅ ⏳ Waiting for web to be ready... (%ds)\n" "$elapsed"
+
+  local dir=$(basename "$PWD")
+  local port=3000
+  if [[ "$dir" =~ persona-web-([0-9]+) ]]; then
+    port=$((3000 + match[1]))
+  fi
+
+  echo ""
+  echo "  🟢 Ready! http://localhost:${port}/dashboard"
+}

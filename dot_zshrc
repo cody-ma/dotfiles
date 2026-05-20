@@ -1,0 +1,136 @@
+export DEFAULT_USER=$USER
+
+# cd by typing directory name
+setopt AUTO_CD
+# don't record duplicate commands
+setopt HIST_IGNORE_DUPS
+# don't record commands starting with space
+setopt HIST_IGNORE_SPACE
+# share history between sessions
+setopt SHARE_HISTORY
+# add timestamps to history
+setopt EXTENDED_HISTORY
+
+# History configuration
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE=~/.zsh_history
+
+# Cache brew prefix to avoid slow call on every shell startup
+export HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-$(brew --prefix)}"
+fpath+=("$HOMEBREW_PREFIX/share/zsh/site-functions")
+
+# Initialize completion system
+autoload -Uz compinit && compinit
+
+autoload -U promptinit
+promptinit
+prompt pure
+
+source <(fzf --zsh)
+
+# fancy-ctrl-z: Ctrl+Z on an empty line foregrounds the last job;
+# on a non-empty line, stash it and clear so you can run something else.
+fancy-ctrl-z() {
+  if [[ $#BUFFER -eq 0 ]]; then
+    BUFFER="fg"
+    zle accept-line -w
+  else
+    zle push-input -w
+    zle clear-screen -w
+  fi
+}
+zle -N fancy-ctrl-z
+bindkey '^Z' fancy-ctrl-z
+
+# Git aliases (the subset of OMZ's git plugin actually used)
+alias g='git'
+alias ga='git add'
+alias gaa='git add --all'
+alias gb='git branch'
+alias gbd='git branch --delete'
+alias gbD='git branch --delete --force'
+alias gc='git commit --verbose'
+alias gcb='git checkout -b'
+alias gcn!='git commit --verbose --no-edit --amend'
+alias gco='git checkout'
+alias gf='git fetch'
+alias gfo='git fetch origin'
+alias gl='git pull'
+alias glg='git log --stat'
+alias glo='git log --oneline --decorate'
+alias glog='git log --oneline --decorate --graph'
+alias gp='git push'
+alias grst='git restore --staged'
+alias gst='git status'
+
+# git_main_branch: returns the name of the repo's main branch
+function git_main_branch() {
+  command git rev-parse --git-dir &>/dev/null || return
+  local ref
+  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk,mainline,default,stable,master}; do
+    if command git show-ref -q --verify $ref; then
+      echo ${ref:t}
+      return
+    fi
+  done
+  echo master
+}
+alias gcm='git checkout $(git_main_branch)'
+alias gmom='git merge origin/$(git_main_branch)'
+
+# zsh-autosuggestions (brew)
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+[ -f ~/.aliases ] && source ~/.aliases
+[ -f ~/.aliases.private ] && source ~/.aliases.private
+[ -f ~/.functions ] && source ~/.functions
+[ -f ~/.functions.private ] && source ~/.functions.private
+[ -f ~/.env ] && source ~/.env
+
+eval "$(zoxide init zsh)"
+
+# Lazy-load gcloud SDK
+gcloud() {
+  unfunction gcloud 2>/dev/null
+  local gcloud_inc="$HOMEBREW_PREFIX/share/google-cloud-sdk/path.zsh.inc"
+  local gcloud_completion="$HOMEBREW_PREFIX/share/google-cloud-sdk/completion.zsh.inc"
+  [ -f "$gcloud_inc" ] && source "$gcloud_inc"
+  [ -f "$gcloud_completion" ] && source "$gcloud_completion"
+  gcloud "$@"
+}
+
+# Also lazy-load gsutil and bq (gcloud companions)
+gsutil() {
+  gcloud
+  unfunction gsutil 2>/dev/null
+  gsutil "$@"
+}
+bq() {
+  gcloud
+  unfunction bq 2>/dev/null
+  bq "$@"
+}
+
+# Keyboard bindings
+bindkey '^[[A' history-search-backward # Up arrow: search history backward
+bindkey '^[[B' history-search-forward  # Down arrow: search history forward
+bindkey '^[^[[D' backward-word         # Option+Left: move word backward
+bindkey '^[^[[C' forward-word          # Option+Right: move word forward
+bindkey '^[[H' beginning-of-line       # Home: go to beginning of line
+bindkey '^[[F' end-of-line             # End: go to end of line
+
+# bun completions
+[ -s "/Users/cody/.bun/_bun" ] && source "/Users/cody/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Cortex CLI completion (disable via /settings in cortex)
+[[ -s ~/.zsh/completions/cortex.zsh ]] && source ~/.zsh/completions/cortex.zsh
+
+# zsh-syntax-highlighting MUST be sourced last
+source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"

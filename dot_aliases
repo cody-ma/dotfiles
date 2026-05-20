@@ -1,0 +1,51 @@
+alias bup='brew update && brew upgrade'
+alias c='clear'
+alias cat='bat'
+alias cd..='cd ..'
+alias cl='claude'
+alias h='history'
+alias gs='git-spice'
+alias j='jobs'
+alias lg='lazygit'
+alias ls='ls -GFh'
+alias rg='rg --smart-case'
+alias rm='rm -i'
+alias sed='gsed'
+alias sl='ls'
+alias tf='terraform'
+alias vi='nvim'
+alias vim='nvim'
+alias vimrc='cd ~/.config/nvim/lua; vim .'
+
+# docker compose commands that take an arg
+alias dc='docker compose'
+alias dcd='printf "%s\n" y | docker compose rm -s -v'
+alias dcu='docker compose up -d'
+alias dcr='docker compose restart'
+alias dcl='docker compose logs --tail=10 -f -t'
+
+# docker aliases
+alias dcdp='docker compose --profile primary down;'
+alias dcup='docker compose --profile primary up -d;'
+alias dcrc='docker compose run --user root --rm web bundle exec rails console;'
+alias dcps="docker compose ps --format json |  jq -r '[.Service, .Status] | @tsv'| column -t -s$'\t'";
+alias dcweb='docker compose run --user root --rm web /bin/bash'
+alias dcvite='docker compose run --user root --rm vite /bin/bash'
+alias bundled='docker compose run --user root --rm web bash -c "bundle install && yarn install"'
+alias migrated='docker compose run --user root --rm web bash -c "bundle exec rails db:migrate && bundle exec rails db:migrate RAILS_ENV=test"'
+
+# cd aliases
+alias infra='cd /Users/cody/persona/persona-infrastructure'
+alias llmf='cd /Users/cody/persona/persona-llm-functions/'
+alias scripts='cd /Users/cody/persona/persona-scripts/'
+alias web='cd /Users/cody/persona/persona-web/'
+alias web2='cd /Users/cody/persona/persona-web-2/'
+alias web3='cd /Users/cody/persona/persona-web-3/'
+alias web4='cd /Users/cody/persona/persona-web-4/'
+alias web5='cd /Users/cody/persona/persona-web-5/'
+
+# lock screen
+alias afk='pmset displaysleepnow'
+
+# See approvals by committer
+alias approvals='git log --since="3 months ago" | grep Approved | sort | uniq -c | sort'

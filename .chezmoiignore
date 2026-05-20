@@ -1,0 +1,3 @@
+# Repo files that should NOT be applied to $HOME
+README.md
+.chezmoiignore

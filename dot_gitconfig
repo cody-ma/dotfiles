@@ -1,0 +1,44 @@
+[alias]
+  b = branch
+  bc = "!git branch --merged | grep -v -e '^\\*' -e 'master' -e 'main' | xargs git branch -d"
+  bd = branch -D
+  ca = commit --amend
+  cob = checkout -b
+  cm = commit -m
+	co = checkout
+  d = diff
+  edit = !nvim -p $(git status --porcelain | awk '{print $2}' )
+  l = !git --no-pager log --pretty=format:\"%C(yellow)%h%Creset -%C(magenta)%d%Creset %s %C(green)(%cr) [%an]\" --abbrev-commit -25
+  pf = push -f
+  pub = !git push -u origin $(git symbolic-ref --short HEAD)
+  pul = pull
+  rs = restore --staged
+	top = shortlog -s -n --first-parent --after=\"2026-01-01\" HEAD
+[pull]
+	rebase = false
+[user]
+	name = Cody Ma
+	email = cody@withpersona.com
+[pager]
+	branch = false
+[rerere]
+	enabled = true
+[rebase]
+  autoStash = true
+	updateRefs = true
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	side-by-side = false
+	line-numbers = true
+	syntax-theme = gruvbox-light
+[merge]
+  autoStash = true
