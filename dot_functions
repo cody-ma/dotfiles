@@ -70,7 +70,12 @@ function webr() {
     _webr_spin "🛑" "Stopping containers..." "printf '%s\n' y | docker compose rm -s -v"
   fi
 
-  _webr_spin "🔧" "Fixing docker compose config..." "p checkout fix"
+  # `p checkout fix` in the primary mutates the tracked docker-compose.yml and
+  # blocks branch checkouts. The primary's docker-compose.override.yml already
+  # provides the multi-instance patches, so only run the fix step in secondaries.
+  if ! $is_primary; then
+    _webr_spin "🔧" "Fixing docker compose config..." "p checkout fix"
+  fi
   _webr_spin "📦" "Installing dependencies..." "docker compose run --user root --rm web bash -c 'bundle install && yarn install'"
   _webr_spin "🗃️"  "Running migrations..." "docker compose run --user root --rm web bash -c 'bundle exec rails db:migrate && bundle exec rails db:migrate RAILS_ENV=test'"
 
@@ -103,4 +108,38 @@ function webr() {
 
   echo ""
   echo "  🟢 Ready! http://localhost:${port}/dashboard"
+}
+
+# coder: create a new persona-web workspace named cody-workspace-<N>.
+# Passes dotfiles_uri so chezmoi runs automatically on first boot.
+# Usage: crc 1
+function crc() {
+  local num="${1:?Usage: crc <1-100>}"
+  local workspace="cody-workspace-${num}"
+  coder create "$workspace" \
+    --template persona-web-devcontainer \
+    --preset Default \
+    --yes \
+    --parameter "dotfiles_uri=git@github.com:cody-ma/dotfiles.git" \
+    --parameter "artifactory_token=cody%40withpersona.com:${ARTIFACTORY_API_KEY}"
+}
+
+# coder: ssh into a workspace with local env vars forwarded into the remote shell.
+# Accepts a number (cr 1 -> cody-workspace-1) or a full workspace name (cr cody).
+# Env vars not set locally are forwarded as empty (harmless).
+function cr() {
+  local arg="${1:-1}"
+  local workspace
+  if [[ "$arg" =~ ^[0-9]+$ ]]; then
+    workspace="cody-workspace-${arg}"
+  else
+    workspace="$arg"
+  fi
+  coder ssh \
+    --env BUILDKITE_API_TOKEN="$BUILDKITE_API_TOKEN" \
+    --env BUILDKITE_ORGANIZATION_SLUG="$BUILDKITE_ORGANIZATION_SLUG" \
+    --env ARTIFACTORY_API_KEY="$ARTIFACTORY_API_KEY" \
+    --env ARTIFACTORY_USER="$ARTIFACTORY_USER" \
+    --env CODER_WORKSPACE_NAME="$workspace" \
+    "$workspace"
 }
