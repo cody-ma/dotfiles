@@ -43,7 +43,7 @@ If an argument is provided, only stage files related to that feature. Otherwise,
 
 3. **Create mode** (new commit):
 
-   a. If on master/main, create and checkout a new feature branch before committing.
+   a. If on master/main, create and checkout a new feature branch before committing. **Branch naming**: always `cody/<short-kebab-description>`. Start with the literal prefix `cody/`, followed by a short kebab-case description of the change. **Do not include a date** in the middle (no `cody/2026-05-22/...`, no `cma/...`). Examples: `cody/cases-reviewer-multiselect-overflow`, `cody/fix-flaky-inquiry-spec`, `cody/agents-empty-state-cta`.
 
    b. Stage relevant files (never stage secrets like .env or credentials).
 
@@ -102,11 +102,32 @@ If an argument is provided, only stage files related to that feature. Otherwise,
    git push -u origin $(git rev-parse --abbrev-ref HEAD)
    ```
 
-   b. Create a draft PR:
+   b. Create a draft PR. **Do not use `--fill`** — the commit message body is too detailed for the PR description. Instead, write a high-level reviewer-facing description in this format. The PR title should be the commit subject line (e.g. `chore(agents): disable open_files agent tool while iterating`). Each bullet in `## Summary` is a **single unbroken physical line** — no manual wrapping.
+
+   **Test plan items describe the testing *approach*, not implementation details.** Write what *kind* of verification was done, not exact spec paths, rspec invocations, or test counts. Reviewers want to know "was this manually exercised?", "were unit tests added?", "did CI run against it?" — not the specific commands you typed. Examples of the right altitude:
+   - ✅ "Unit specs cover the disabled-tool branch and existing #execute paths"
+   - ✅ "Manually verified the tool picker in the dashboard agent editor"
+   - ✅ "Buildkite CI"
+   - ❌ "Run \`docker compose exec web bundle exec rspec spec/lib/.../foo_spec.rb spec/models/bar_spec.rb\`" (too specific)
+   - ❌ "12 specs pass in foo_spec.rb" (counts are noise)
 
    ```bash
-   gh pr create -a @me --fill --base master --draft
+   gh pr create -a @me --base master --draft \
+     --title "<commit subject line>" \
+     --body "$(cat <<'EOF'
+   ## Summary
+   - <bullet 1 — one line>
+   - <bullet 2 — one line>
+   - <bullet 3 — one line, optional>
+
+   ## Test plan
+   - [ ] <high-level verification approach 1>
+   - [ ] <high-level verification approach 2>
+   EOF
+   )"
    ```
+
+   The detailed risk/testing-strategy context lives in the commit message; reviewers who want it can click through. Keep the PR description scannable.
 
    c. Open PR in browser and return URL: `gh pr view --web`
 
@@ -120,13 +141,17 @@ If an argument is provided, only stage files related to that feature. Otherwise,
 
    b. If the commit message was rewritten in step 4c, also update the PR title and body to match:
       - Fetch the current PR title/body: `gh pr view --json title,body`
-      - Compare against the new commit message and full diff — if the PR description no longer accurately reflects the changes, update it:
-
-      Each prose paragraph in `<updated body>` is a **single unbroken physical line** — no manual newlines mid-paragraph:
+      - Compare against the new commit message and full diff — if the PR description no longer accurately reflects the changes, update it. Use the same high-level Summary / Test plan format as in step 6b — do not paste the commit body. Each Summary bullet is a **single unbroken physical line**:
 
       ```bash
-      gh pr edit --title "<updated title>" --body "$(cat <<'EOF'
-      <updated body — paragraphs are one line each, no manual wrapping>
+      gh pr edit --title "<updated commit subject>" --body "$(cat <<'EOF'
+      ## Summary
+      - <bullet 1>
+      - <bullet 2>
+
+      ## Test plan
+      - [ ] <verification step 1>
+      - [ ] <verification step 2>
       EOF
       )"
       ```
@@ -134,7 +159,8 @@ If an argument is provided, only stage files related to that feature. Otherwise,
    c. Open existing PR in browser and return URL: `gh pr view --web`
 
 8. After pushing, launch the `buildkite-monitor` agent in the background to monitor the build and automatically fix any CI failures:
-   - Use the Agent tool with `subagent_type: buildkite-monitor`, `run_in_background: true`, `mode: "auto"`
+   - In Claude Code, use the Agent tool with `subagent_type: buildkite-monitor`, `run_in_background: true`, `mode: "auto"`
+   - In Codex, use `multi_agent_v1.spawn_agent` with `agent_type: "worker"` and `fork_context: true`. Codex does not expose Claude Code's `subagent_type`, `run_in_background`, or `mode` fields; `spawn_agent` returns immediately while the spawned agent continues running. Include `/Users/cody/.claude/agents/buildkite-monitor.md` as the monitor instructions in the prompt context, and explicitly tell the worker to follow those instructions as the buildkite-monitor.
    - In the prompt, tell the agent which branch and PR to monitor
    - Compute the status file path from the current branch: `tmp/buildkite-monitor-<branch-slug>.md` (branch name with `/` replaced by `-`). The buildkite-monitor writes live progress updates to this file throughout its run (polling state, failure counts, current phase, last-updated timestamp).
    - Tell the user the CI monitor is running in the background, share the **status file path**, and let them know they can ask for status anytime (or check the file directly).

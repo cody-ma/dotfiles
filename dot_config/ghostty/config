@@ -25,6 +25,9 @@ unfocused-split-opacity = 0.4
 
 # Notifications
 bell-features = attention,title,no-system,no-audio,no-border
+bell-audio-volume = 0
+desktop-notifications = true
+notify-on-command-finish-action = no-bell,notify
 
 # Window
 macos-titlebar-style = tabs
