@@ -112,6 +112,7 @@ function webr() {
 
 # coder: create a new persona-web workspace named cody-workspace-<N>.
 # Passes dotfiles_uri so chezmoi runs automatically on first boot.
+# All required parameters are pre-set so --yes can run unattended.
 # Usage: crc 1
 function crc() {
   local num="${1:?Usage: crc <1-100>}"
@@ -121,7 +122,10 @@ function crc() {
     --preset Default \
     --yes \
     --parameter "dotfiles_uri=git@github.com:cody-ma/dotfiles.git" \
-    --parameter "artifactory_token=cody%40withpersona.com:${ARTIFACTORY_API_KEY}"
+    --parameter "artifactory_token=cody%40withpersona.com:${ARTIFACTORY_API_KEY}" \
+    --parameter "buildkite_api_token=${BUILDKITE_API_TOKEN}" \
+    --parameter "jetbrains_ide=IU" \
+    --parameter "home_volume_size=2" < /dev/null
 }
 
 # coder: ssh into a workspace with local env vars forwarded into the remote shell.
