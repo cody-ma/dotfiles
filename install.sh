@@ -18,5 +18,13 @@ if [ ! -d "$PURE_DIR" ]; then
   git clone --depth 1 https://github.com/sindresorhus/pure.git "$PURE_DIR" 2>/dev/null || true
 fi
 
+# Install tmux plugin manager (tpm) if missing. tpm manages the plugins listed
+# in ~/.config/tmux/tmux.conf. After cloning, `tmux` + prefix-I installs them.
+TPM_DIR="$HOME/.tmux/plugins/tpm"
+if [ ! -d "$TPM_DIR" ]; then
+  mkdir -p "$(dirname "$TPM_DIR")"
+  git clone --depth 1 https://github.com/tmux-plugins/tpm.git "$TPM_DIR" 2>/dev/null || true
+fi
+
 # init --apply does both: clone (or noop if already cloned) and apply.
 chezmoi init --apply cody-ma
