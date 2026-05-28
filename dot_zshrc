@@ -29,6 +29,11 @@ autoload -Uz compinit && compinit
 # added to fpath above); on Linux workspaces install.sh clones it to ~/.zsh/pure.
 [ -d "$HOME/.zsh/pure" ] && fpath+=("$HOME/.zsh/pure")
 
+# Pure shows user@host whenever $SSH_CONNECTION is set — always true on
+# Coder workspaces, where the hostname is the Kubernetes pod name. Suppress
+# the SSH indicators on Coder pods so the prompt matches local zsh.
+[[ "$HOST" == coder-* ]] && unset SSH_CONNECTION SSH_CLIENT SSH_TTY
+
 autoload -U promptinit
 promptinit
 prompt_themes=(${prompt_themes[@]})
