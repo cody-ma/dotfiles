@@ -29,16 +29,22 @@ autoload -Uz compinit && compinit
 # added to fpath above); on Linux workspaces install.sh clones it to ~/.zsh/pure.
 [ -d "$HOME/.zsh/pure" ] && fpath+=("$HOME/.zsh/pure")
 
-# Pure shows user@host whenever $SSH_CONNECTION is set — always true on
-# Coder workspaces, where the hostname is the Kubernetes pod name. Suppress
-# the SSH indicators on Coder pods so the prompt matches local zsh.
-[[ "$HOST" == coder-* ]] && unset SSH_CONNECTION SSH_CLIENT SSH_TTY
-
 autoload -U promptinit
 promptinit
 prompt_themes=(${prompt_themes[@]})
 if (( ${prompt_themes[(I)pure]} )); then
   prompt pure
+  # Pure shows user@host when it detects SSH (via $SSH_CONNECTION or a
+  # fallback `who -m` lookup), which is always true on Coder workspaces
+  # where the hostname is the K8s pod name. Wrap pure's state setup so the
+  # user@host slot stays empty on Coder pods. Mac sessions keep default.
+  if [[ "$HOST" == coder-* ]] && functions prompt_pure_state_setup >/dev/null; then
+    functions -c prompt_pure_state_setup _prompt_pure_state_setup_orig
+    prompt_pure_state_setup() {
+      _prompt_pure_state_setup_orig "$@"
+      prompt_pure_state[username]=''
+    }
+  fi
 fi
 
 command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
