@@ -16,18 +16,23 @@ HISTSIZE=10000
 SAVEHIST=10000
 HISTFILE=~/.zsh_history
 
-# Cache brew prefix to avoid slow call on every shell startup
-export HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-$(brew --prefix)}"
-fpath+=("$HOMEBREW_PREFIX/share/zsh/site-functions")
+# Cache brew prefix to avoid slow call on every shell startup (macOS-only)
+if command -v brew >/dev/null 2>&1; then
+  export HOMEBREW_PREFIX="${HOMEBREW_PREFIX:-$(brew --prefix)}"
+  fpath+=("$HOMEBREW_PREFIX/share/zsh/site-functions")
+fi
 
 # Initialize completion system
 autoload -Uz compinit && compinit
 
 autoload -U promptinit
 promptinit
-prompt pure
+prompt_themes=(${prompt_themes[@]})
+if (( ${prompt_themes[(I)pure]} )); then
+  prompt pure
+fi
 
-source <(fzf --zsh)
+command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
 
 # fancy-ctrl-z: Ctrl+Z on an empty line foregrounds the last job;
 # on a non-empty line, stash it and clear so you can run something else.
@@ -43,10 +48,11 @@ fancy-ctrl-z() {
 zle -N fancy-ctrl-z
 bindkey '^Z' fancy-ctrl-z
 
-# zsh-autosuggestions (brew)
+# zsh-autosuggestions (brew on macOS; absent on Linux workspaces)
 ZSH_AUTOSUGGEST_STRATEGY=(history completion)
 ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
-source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+[ -n "${HOMEBREW_PREFIX:-}" ] && [ -f "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ] \
+  && source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
 [ -f ~/.aliases ] && source ~/.aliases
 [ -f ~/.aliases.private ] && source ~/.aliases.private
@@ -54,7 +60,7 @@ source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 [ -f ~/.functions.private ] && source ~/.functions.private
 [ -f ~/.env ] && source ~/.env
 
-eval "$(zoxide init zsh)"
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 
 # Lazy-load gcloud SDK
 gcloud() {
@@ -96,5 +102,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # Cortex CLI completion (disable via /settings in cortex)
 [[ -s ~/.zsh/completions/cortex.zsh ]] && source ~/.zsh/completions/cortex.zsh
 
-# zsh-syntax-highlighting MUST be sourced last
-source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+# zsh-syntax-highlighting MUST be sourced last (brew on macOS; absent on Linux workspaces)
+[ -n "${HOMEBREW_PREFIX:-}" ] && [ -f "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] \
+  && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
