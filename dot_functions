@@ -121,7 +121,7 @@ function crc() {
     --template persona-web-devcontainer \
     --preset Default \
     --yes \
-    --parameter "dotfiles_uri=git@github.com:cody-ma/dotfiles.git" \
+    --parameter "dotfiles_uri=https://github.com/cody-ma/dotfiles.git" \
     --parameter "artifactory_token=cody%40withpersona.com:${ARTIFACTORY_API_KEY}" \
     --parameter "buildkite_api_token=${BUILDKITE_API_TOKEN}" \
     --parameter "jetbrains_ide=IU" \
