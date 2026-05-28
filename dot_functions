@@ -128,18 +128,37 @@ function crc() {
     --parameter "home_volume_size=5" < /dev/null
 }
 
-# coder: ssh into a workspace with local env vars forwarded into the remote shell.
+# coder: ssh into a workspace with local env vars forwarded into the remote shell
+# AND localhost port forwards for Rails (3000-3002), Storybook (6006-6008),
+# and Temporal (8080-8082).
+#
+# Local-port scheme: N*10000 + remote_port, where N is the workspace number.
+#   cr 1 -> cody-workspace-1: 13000-13002, 16006-16008, 18080-18082
+#   cr 2 -> cody-workspace-2: 23000-23002, 26006-26008, 28080-28082
+# Open http://localhost:13000/dashboard once cr is running.
+#
 # Accepts a number (cr 1 -> cody-workspace-1) or a full workspace name (cr cody).
 # Env vars not set locally are forwarded as empty (harmless).
 function cr() {
   local arg="${1:-1}"
-  local workspace
+  local workspace n
   if [[ "$arg" =~ ^[0-9]+$ ]]; then
     workspace="cody-workspace-${arg}"
+    n="$arg"
   else
     workspace="$arg"
+    n=1
   fi
   coder ssh \
+    -L $((n*10000 + 3000)):localhost:3000 \
+    -L $((n*10000 + 3001)):localhost:3001 \
+    -L $((n*10000 + 3002)):localhost:3002 \
+    -L $((n*10000 + 6006)):localhost:6006 \
+    -L $((n*10000 + 6007)):localhost:6007 \
+    -L $((n*10000 + 6008)):localhost:6008 \
+    -L $((n*10000 + 8080)):localhost:8080 \
+    -L $((n*10000 + 8081)):localhost:8081 \
+    -L $((n*10000 + 8082)):localhost:8082 \
     --env BUILDKITE_API_TOKEN="$BUILDKITE_API_TOKEN" \
     --env BUILDKITE_ORGANIZATION_SLUG="$BUILDKITE_ORGANIZATION_SLUG" \
     --env ARTIFACTORY_API_KEY="$ARTIFACTORY_API_KEY" \
