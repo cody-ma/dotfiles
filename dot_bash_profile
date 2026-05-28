@@ -1,0 +1,14 @@
+# Auto-switch interactive bash logins to zsh (covers Coder workspaces, where
+# the default login shell is bash but I prefer zsh everywhere).
+# Guards: only on interactive shells, only if we're not already in zsh,
+# and only if zsh is installed. If exec fails, fall through to bash init.
+if [[ $- == *i* ]] && [[ -z $ZSH_VERSION ]] && command -v zsh >/dev/null 2>&1; then
+  export SHELL=$(command -v zsh)
+  exec zsh -l
+fi
+
+# --- legacy bash init (only reached if zsh exec is skipped/fails) ---
+
+[[ -s "$HOME/.profile" ]] && source "$HOME/.profile"
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
