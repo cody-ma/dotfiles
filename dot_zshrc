@@ -25,6 +25,10 @@ fi
 # Initialize completion system
 autoload -Uz compinit && compinit
 
+# Pure prompt: brew installs it under $HOMEBREW_PREFIX/share/zsh/site-functions (already
+# added to fpath above); on Linux workspaces install.sh clones it to ~/.zsh/pure.
+[ -d "$HOME/.zsh/pure" ] && fpath+=("$HOME/.zsh/pure")
+
 autoload -U promptinit
 promptinit
 prompt_themes=(${prompt_themes[@]})

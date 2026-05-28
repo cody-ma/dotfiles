@@ -10,5 +10,13 @@ if ! command -v chezmoi >/dev/null 2>&1; then
   export PATH="$BINDIR:$PATH"
 fi
 
+# Install pure prompt (zsh theme) if missing. On macOS it comes from brew;
+# on Linux workspaces we clone it manually so the same .zshrc works in both.
+PURE_DIR="$HOME/.zsh/pure"
+if [ ! -d "$PURE_DIR" ]; then
+  mkdir -p "$(dirname "$PURE_DIR")"
+  git clone --depth 1 https://github.com/sindresorhus/pure.git "$PURE_DIR" 2>/dev/null || true
+fi
+
 # init --apply does both: clone (or noop if already cloned) and apply.
 chezmoi init --apply cody-ma
