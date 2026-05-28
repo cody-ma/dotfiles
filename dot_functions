@@ -149,20 +149,30 @@ function cr() {
     workspace="$arg"
     n=1
   fi
+
+  # coder ssh doesn't accept -L, so run the port forwards as a side process.
+  # The kill at the end tears them down when the ssh session exits.
+  coder port-forward "$workspace" \
+    --tcp $((n*10000 + 3000)):3000 \
+    --tcp $((n*10000 + 3001)):3001 \
+    --tcp $((n*10000 + 3002)):3002 \
+    --tcp $((n*10000 + 6006)):6006 \
+    --tcp $((n*10000 + 6007)):6007 \
+    --tcp $((n*10000 + 6008)):6008 \
+    --tcp $((n*10000 + 8080)):8080 \
+    --tcp $((n*10000 + 8081)):8081 \
+    --tcp $((n*10000 + 8082)):8082 \
+    >/dev/null 2>&1 &
+  local pf_pid=$!
+
   coder ssh \
-    -L $((n*10000 + 3000)):localhost:3000 \
-    -L $((n*10000 + 3001)):localhost:3001 \
-    -L $((n*10000 + 3002)):localhost:3002 \
-    -L $((n*10000 + 6006)):localhost:6006 \
-    -L $((n*10000 + 6007)):localhost:6007 \
-    -L $((n*10000 + 6008)):localhost:6008 \
-    -L $((n*10000 + 8080)):localhost:8080 \
-    -L $((n*10000 + 8081)):localhost:8081 \
-    -L $((n*10000 + 8082)):localhost:8082 \
     --env BUILDKITE_API_TOKEN="$BUILDKITE_API_TOKEN" \
     --env BUILDKITE_ORGANIZATION_SLUG="$BUILDKITE_ORGANIZATION_SLUG" \
     --env ARTIFACTORY_API_KEY="$ARTIFACTORY_API_KEY" \
     --env ARTIFACTORY_USER="$ARTIFACTORY_USER" \
     --env CODER_WORKSPACE_NAME="$workspace" \
     "$workspace"
+
+  kill "$pf_pid" 2>/dev/null
+  wait "$pf_pid" 2>/dev/null
 }
