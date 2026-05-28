@@ -125,7 +125,7 @@ function crc() {
     --parameter "artifactory_token=cody%40withpersona.com:${ARTIFACTORY_API_KEY}" \
     --parameter "buildkite_api_token=${BUILDKITE_API_TOKEN}" \
     --parameter "jetbrains_ide=IU" \
-    --parameter "home_volume_size=2" < /dev/null
+    --parameter "home_volume_size=5" < /dev/null
 }
 
 # coder: ssh into a workspace with local env vars forwarded into the remote shell.
