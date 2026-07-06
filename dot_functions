@@ -111,21 +111,37 @@ function webr() {
 }
 
 # coder: create a new persona-web workspace named cody-workspace-<N>.
-# Passes dotfiles_uri so chezmoi runs automatically on first boot.
-# All required parameters are pre-set so --yes can run unattended.
-# Usage: crc 1
+# Passes dotfiles_uri so chezmoi runs automatically on first boot, and pre-sets
+# every required parameter (incl. oracle_sidecar_secret, whose prompt otherwise
+# hangs under --yes) so creation runs fully unattended. Registers the SSH host
+# on success. Usage: crc 1
 function crc() {
   local num="${1:?Usage: crc <1-100>}"
   local workspace="cody-workspace-${num}"
+
+  # The template's admin-set Artifactory token builds the app on its own, so
+  # only pass a personal token when ARTIFACTORY_API_KEY is exported. Passing
+  # "email:" with an empty key would break bundler if the fallback ever runs.
+  local art_token=""
+  [ -n "${ARTIFACTORY_API_KEY:-}" ] && art_token="cody%40withpersona.com:${ARTIFACTORY_API_KEY}"
+
   coder create "$workspace" \
     --template persona-web-devcontainer \
     --preset Default \
     --yes \
     --parameter "dotfiles_uri=https://github.com/cody-ma/dotfiles.git" \
-    --parameter "artifactory_token=cody%40withpersona.com:${ARTIFACTORY_API_KEY}" \
+    --parameter "artifactory_token=${art_token}" \
     --parameter "buildkite_api_token=${BUILDKITE_API_TOKEN}" \
     --parameter "jetbrains_ide=IU" \
-    --parameter "home_volume_size=5" < /dev/null
+    --parameter "home_volume_size=5" \
+    --parameter "oracle_sidecar_secret=" < /dev/null || return 1
+
+  # Register coder.<workspace>.main in ~/.ssh/config so ssh/IDEs/Codex reach it.
+  coder config-ssh --yes >/dev/null 2>&1
+
+  echo "✅ ${workspace} created."
+  echo "   Dashboard: https://web--${workspace}--cody.coder.development.personerds.com/dashboard"
+  echo "   Shell + port-forwards: cr ${num}"
 }
 
 # coder: ssh into a workspace with local env vars forwarded into the remote shell

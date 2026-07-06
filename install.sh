@@ -3,6 +3,15 @@
 # Bootstraps chezmoi (if missing) and applies the dotfiles to $HOME.
 set -euo pipefail
 
+# Per-machine kill switch: Coder re-runs this script on every pod restart via
+# the dotfiles module, so deleting applied rc files by hand doesn't stick.
+# `touch ~/.no-dotfiles` on a workspace to keep it permanently dotfile-free
+# (e.g. the Codex desktop app's SSH relay breaks when the shell rc runs).
+if [ -f "$HOME/.no-dotfiles" ]; then
+  echo "~/.no-dotfiles present; skipping dotfiles setup"
+  exit 0
+fi
+
 if ! command -v chezmoi >/dev/null 2>&1; then
   BINDIR="$HOME/.local/bin"
   mkdir -p "$BINDIR"

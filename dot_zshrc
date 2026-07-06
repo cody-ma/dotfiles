@@ -1,3 +1,11 @@
+# If the inherited TERM has no terminfo entry on this host (e.g. SSHing from
+# Ghostty into a Coder pod that lacks xterm-ghostty), fall back to a ubiquitous
+# entry so clear/tput/less/vim work. Self-correcting: where $TERM is already
+# known (e.g. locally on the Mac), this is a no-op.
+if command -v infocmp >/dev/null 2>&1 && ! infocmp "${TERM:-}" >/dev/null 2>&1; then
+  export TERM=xterm-256color
+fi
+
 export DEFAULT_USER=$USER
 
 # cd by typing directory name
@@ -33,18 +41,14 @@ autoload -U promptinit
 promptinit
 prompt_themes=(${prompt_themes[@]})
 if (( ${prompt_themes[(I)pure]} )); then
+  # Pure shows user@host when it detects SSH or a container, which is always
+  # true on Coder workspaces (hostname is the K8s pod name). Disabling pure's
+  # host segment hides the long `persona@coder-<pod>` prefix. Gate on Coder
+  # pods so Mac SSH sessions keep the default; local Mac sessions omit
+  # user@host anyway. (Pure >=1.28 renders this via psvar[13] + this zstyle,
+  # not the old prompt_pure_state[username] key.)
+  [[ "$HOST" == coder-* ]] && zstyle ':prompt:pure:host' show false
   prompt pure
-  # Pure shows user@host when it detects SSH (via $SSH_CONNECTION or a
-  # fallback `who -m` lookup), which is always true on Coder workspaces
-  # where the hostname is the K8s pod name. Wrap pure's state setup so the
-  # user@host slot stays empty on Coder pods. Mac sessions keep default.
-  if [[ "$HOST" == coder-* ]] && functions prompt_pure_state_setup >/dev/null; then
-    functions -c prompt_pure_state_setup _prompt_pure_state_setup_orig
-    prompt_pure_state_setup() {
-      _prompt_pure_state_setup_orig "$@"
-      prompt_pure_state[username]=''
-    }
-  fi
 fi
 
 command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
