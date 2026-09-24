@@ -51,7 +51,9 @@ if (( ${prompt_themes[(I)pure]} )); then
   prompt pure
 fi
 
-command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
+if [[ -o interactive && -t 0 ]] && command -v fzf >/dev/null 2>&1; then
+  source <(fzf --zsh)
+fi
 
 # fancy-ctrl-z: Ctrl+Z on an empty line foregrounds the last job;
 # on a non-empty line, stash it and clear so you can run something else.
@@ -112,7 +114,7 @@ bindkey '^[[H' beginning-of-line       # Home: go to beginning of line
 bindkey '^[[F' end-of-line             # End: go to end of line
 
 # bun completions
-[ -s "/Users/cody/.bun/_bun" ] && source "/Users/cody/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
