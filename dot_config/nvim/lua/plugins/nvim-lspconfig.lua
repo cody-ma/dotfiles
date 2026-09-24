@@ -26,6 +26,13 @@ return {
     opts = {
       -- Useful for debugging formatter issues
       format_notify = false,
+      diagnostics = {
+        underline = true,
+        virtual_text = {
+          current_line = true,
+          source = "if_many",
+        },
+      },
       inlay_hints = {
         enabled = false,
       },

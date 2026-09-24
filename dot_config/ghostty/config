@@ -4,6 +4,8 @@ theme = dark:Gruvbox Dark,light:Gruvbox Light
 # Font
 font-family = "CodeNewRoman Nerd Font"
 font-size = 18
+font-feature = -calt
+font-feature = -liga
 
 # Shell Integration
 shell-integration = detect
